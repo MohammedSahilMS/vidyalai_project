@@ -75,10 +75,10 @@ const Post = ({ post }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Fetch user data when the component mounts
+
     const fetchUserData = async () => {
       try {
-        const userData = await fetchUserById(post.id); // Assuming post has a userId property
+        const userData = await fetchUserById(post.id);
         setUser(userData);
       } catch (error) {
         console.error('Error fetching user data:', error);
