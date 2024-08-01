@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import Post from './Post';
 import Container from '../common/Container';
-import useWindowWidth from '../hooks/useWindowWidth';
+import { useWindowWidth } from '../../context/WindowWidthContext';
 
 const PostListContainer = styled.div(() => ({
   display: 'flex',
@@ -32,44 +32,74 @@ const LoadMoreButton = styled.button(() => ({
   },
 }));
 
+const maxPosts = 50; 
+
 export default function Posts() {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [morePosts, setMorePosts] = useState(true);
 
-  const { isSmallerDevice } = useWindowWidth();
+  const { isSmallerDevice } = useWindowWidth(); 
+
+  const fetchPosts = async (start, limit) => {
+    setIsLoading(true);
+
+    try {
+      const { data: post } = await axios.get('/api/v1/posts', {
+        params: { start, limit },
+      });
+
+
+      if (post.length > 0) {
+        setPosts(prevPosts => {
+          const updatedPosts = [...prevPosts, ...post];
+          
+ 
+          if (updatedPosts.length >= maxPosts) {
+            setMorePosts(false);
+          }
+          
+          return updatedPosts;
+        });
+      } else {
+        setMorePosts(false); 
+      }
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPost = async () => {
-      const { data: posts } = await axios.get('/api/v1/posts', {
-        params: { start: 0, limit: isSmallerDevice ? 5 : 10 },
-      });
-      setPosts(posts);
-    };
-
-    fetchPost();
+    const initialLimit = isSmallerDevice ? 5 : 10;
+    fetchPosts(0, initialLimit);
   }, [isSmallerDevice]);
 
   const handleClick = () => {
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
+    if (!isLoading && morePosts) {
+      const limit = isSmallerDevice ? 5 : 10;
+      fetchPosts(page * limit, limit);
+      setPage(prevPage => prevPage + 1);
+    }
   };
 
   return (
     <Container>
       <PostListContainer>
         {posts.map(post => (
-          <Post post={post} />
+          <Post key={post.id} post={post} />
         ))}
       </PostListContainer>
 
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <LoadMoreButton onClick={handleClick} disabled={isLoading}>
-          {!isLoading ? 'Load More' : 'Loading...'}
-        </LoadMoreButton>
-      </div>
+      {morePosts && (
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <LoadMoreButton onClick={handleClick} disabled={isLoading}>
+            {!isLoading ? 'Load More' : 'Loading...'}
+          </LoadMoreButton>
+        </div>
+      )}
     </Container>
   );
 }

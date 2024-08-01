@@ -2,10 +2,12 @@ import React from 'react';
 import Posts from '../components/Posts';
 import Footer from '../components/Footer';
 import TopNavbar from '../components/Navbar';
+import { WindowWidthProvider } from '../context/WindowWidthContext';
 
 export default function HomePage() {
   return (
-    <div
+    <WindowWidthProvider>
+       <div
       style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}
     >
       <TopNavbar />
@@ -18,5 +20,8 @@ export default function HomePage() {
       </div>
       <Footer />
     </div>
+
+    </WindowWidthProvider>
+   
   );
 }
